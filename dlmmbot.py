@@ -1,61 +1,41 @@
-import shutil
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
 import requests
-import time
 
 # Discord webhook URL
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1321351247466463295/5DqSeKppI00w4vdRk61arQ86Vp3-RBgcDxCTSK5G5vDE22Z5dz1QWJleErN0HDBTf2Rt"
 
-# Meteora website URL
-WEBSITE_URL = "https://app.meteora.ag/"
+# Meteora API URL for active pools
+API_URL = "https://dlmm-api.meteora.ag/pool/active"
 
-def fetch_pool_data():
+def fetch_active_pools():
     """
-    Fetch pool data dynamically using Selenium.
+    Fetch active pools from the Meteora API.
     """
-    # Detect ChromeDriver binary dynamically
-    chromedriver_path = shutil.which("chromedriver")
-    if not chromedriver_path:
-        raise FileNotFoundError("ChromeDriver binary not found in PATH")
-
-    # Set up Selenium WebDriver with headless Chrome
-    options = Options()
-    options.add_argument("--headless")  # Run Chrome in headless mode
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.binary_location = "/usr/bin/chromium"  # Specify the location of Chromium binary
-
-    service = Service(chromedriver_path)
-    driver = webdriver.Chrome(service=service, options=options)
-
-    driver.get(WEBSITE_URL)
-    time.sleep(5)  # Wait for the page to load
-
-    pools = []
-
     try:
-        # Adjust these selectors based on the actual HTML structure
-        pool_sections = driver.find_elements(By.CLASS_NAME, "your-class-name-for-pools")  # Replace with actual class name
-        for section in pool_sections:
-            name = section.find_element(By.CLASS_NAME, "pool-name-class").text  # Replace with actual class name
-            tvl = section.find_element(By.CLASS_NAME, "tvl-class").text  # Replace with actual class name
-            fee_tvl = section.find_element(By.CLASS_NAME, "fee-tvl-class").text  # Replace with actual class name
+        response = requests.get(API_URL)
+        response.raise_for_status()
+        pools = response.json()
+        return pools
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching active pools: {e}")
+        return []
 
-            if "SOL" in name and float(fee_tvl.replace("%", "").strip()) > 50:
-                pools.append({
-                    "name": name,
-                    "tvl": tvl,
-                    "fee_tvl": fee_tvl
-                })
-    except Exception as e:
-        print(f"Error extracting data: {e}")
-    finally:
-        driver.quit()
-
-    return pools
+def filter_pools(pools):
+    """
+    Filter pools to include only SOL pairs with 24hr Fee/TVL > 50%.
+    """
+    filtered_pools = []
+    for pool in pools:
+        try:
+            # Ensure the pool has the necessary fields
+            if (
+                "SOL" in pool["name"].upper() and
+                "fee_tvl" in pool and
+                float(pool["fee_tvl"]) > 50
+            ):
+                filtered_pools.append(pool)
+        except KeyError:
+            continue
+    return filtered_pools
 
 def format_discord_message(pools):
     """
@@ -66,7 +46,9 @@ def format_discord_message(pools):
 
     message = "**Filtered SOL Pools with 24hr Fee/TVL > 50%:**\n\n"
     for pool in pools:
-        message += f"- **Name**: {pool['name']}\n  **TVL**: {pool['tvl']}\n  **24hr Fee/TVL**: {pool['fee_tvl']}%\n\n"
+        message += f"- **Name**: {pool['name']}\n"
+        message += f"  **TVL**: {pool.get('tvl', 'N/A')}\n"
+        message += f"  **24hr Fee/TVL**: {pool.get('fee_tvl', 'N/A')}%\n\n"
 
     return message
 
@@ -83,8 +65,9 @@ def send_discord_notification(message):
         print(f"Error sending notification: {e}")
 
 def main():
-    pools = fetch_pool_data()
-    message = format_discord_message(pools)
+    pools = fetch_active_pools()
+    filtered_pools = filter_pools(pools)
+    message = format_discord_message(filtered_pools)
     send_discord_notification(message)
 
 if __name__ == "__main__":
