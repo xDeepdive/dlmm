@@ -11,11 +11,13 @@ RUN apt-get update && apt-get install -y \
     libappindicator3-1 \
     fonts-liberation \
     chromium \
-    chromium-driver
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for Chromium and ChromeDriver
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_BIN=/usr/bin/chromedriver
+ENV PATH="$PATH:/usr/bin"
 
 # Install Python dependencies
 COPY requirements.txt /app/requirements.txt
