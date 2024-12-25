@@ -4,47 +4,40 @@ import requests
 DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1321351247466463295/5DqSeKppI00w4vdRk61arQ86Vp3-RBgcDxCTSK5G5vDE22Z5dz1QWJleErN0HDBTf2Rt"
 
 # Meteora DLMM API base URL
-BASE_URL = 'https://dlmm-api.meteora.ag'
+BASE_URL = "https://dlmm-api.meteora.ag"
 
-def fetch_active_pools():
+def fetch_trading_pairs():
+    """
+    Fetch all trading pairs from the Meteora DLMM API.
+    """
     try:
-        response = requests.get(f'{BASE_URL}/pool/active')
+        response = requests.get(f"{BASE_URL}/pair/all")
         response.raise_for_status()
-        return response.json()
+        return response.json()  # Assuming the API returns a JSON response
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching active pools: {e}")
+        print(f"Error fetching trading pairs: {e}")
         return []
 
-def fetch_pool_info(pool_address):
-    try:
-        response = requests.get(f'{BASE_URL}/pool/{pool_address}')
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching pool info for {pool_address}: {e}")
-        return {}
+def format_trading_pairs_message(trading_pairs):
+    """
+    Format the trading pairs into a message for Discord.
+    """
+    if not trading_pairs:
+        return "No active trading pairs found."
 
-def get_top_fee_generating_pools():
-    active_pools = fetch_active_pools()
-    pool_fee_data = []
+    message = "**Active Trading Pairs:**\n\n"
+    for pair in trading_pairs:
+        # Customize this based on the structure of the trading pair data
+        name = pair.get("name", "Unknown")
+        address = pair.get("address", "N/A")
+        message += f"- **Name**: {name}\n  **Address**: {address}\n\n"
+    return message
 
-    for pool in active_pools:
-        pool_info = fetch_pool_info(pool['address'])
-        if pool_info:
-            fees_generated = pool_info.get('fees_generated', 0)  # Adjust based on actual API response
-            pool_fee_data.append((pool['name'], fees_generated))
-
-    # Sort pools by fees generated in descending order
-    pool_fee_data.sort(key=lambda x: x[1], reverse=True)
-    return pool_fee_data[:5]  # Top 5 pools
-
-def send_discord_notification(top_pools):
-    message = "**Top Fee-Generating Pools:**\n\n"
-    for pool_name, fees in top_pools:
-        message += f"**{pool_name}**: {fees} fees generated\n"
-
+def send_discord_notification(message):
+    """
+    Send a notification to the Discord webhook.
+    """
     payload = {"content": message}
-
     try:
         response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
         response.raise_for_status()
@@ -52,9 +45,10 @@ def send_discord_notification(top_pools):
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification to Discord: {e}")
 
+def main():
+    trading_pairs = fetch_trading_pairs()
+    message = format_trading_pairs_message(trading_pairs)
+    send_discord_notification(message)
+
 if __name__ == "__main__":
-    top_pools = get_top_fee_generating_pools()
-    if top_pools:
-        send_discord_notification(top_pools)
-    else:
-        print("No data to send.")
+    main()
