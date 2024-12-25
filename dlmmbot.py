@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.options import Options
+import chromedriver_autoinstaller
 import requests
 import time
 
@@ -15,8 +15,16 @@ def fetch_pool_data():
     """
     Fetch pool data dynamically using Selenium.
     """
-    # Set up Selenium WebDriver
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    # Automatically install ChromeDriver
+    chromedriver_autoinstaller.install()
+
+    # Set up Selenium WebDriver with headless Chrome
+    options = Options()
+    options.add_argument("--headless")  # Run Chrome in headless mode
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    driver = webdriver.Chrome(options=options)
+
     driver.get(WEBSITE_URL)
     time.sleep(5)  # Wait for the page to load
 
@@ -24,7 +32,7 @@ def fetch_pool_data():
 
     try:
         # Adjust these selectors based on the actual HTML structure
-        pool_sections = driver.find_elements(By.CLASS_NAME, "your-class-name-for-pools")  # Adjust this class name
+        pool_sections = driver.find_elements(By.CLASS_NAME, "your-class-name-for-pools")  # Replace with class name
         for section in pool_sections:
             # Extract relevant data (adjust based on the HTML structure)
             name = section.find_element(By.CLASS_NAME, "pool-name-class").text  # Replace with actual class name
