@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 import requests
 import time
 
@@ -21,7 +22,9 @@ def fetch_pool_data():
     options.add_argument("--disable-dev-shm-usage")
     options.binary_location = "/usr/bin/chromium"  # Specify the location of Chromium binary
 
-    driver = webdriver.Chrome(executable_path="/usr/bin/chromedriver", options=options)
+    # Use Service to specify the ChromeDriver path
+    service = Service("/usr/bin/chromedriver")
+    driver = webdriver.Chrome(service=service, options=options)
 
     driver.get(WEBSITE_URL)
     time.sleep(5)  # Wait for the page to load
