@@ -1,7 +1,3 @@
-requests
-aiohttp
-discord.py
-selenium
-webdriver-manager
 selenium
 chromedriver-autoinstaller
+requests
