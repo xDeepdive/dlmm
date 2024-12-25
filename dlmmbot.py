@@ -18,21 +18,33 @@ def fetch_trading_pairs():
         print(f"Error fetching trading pairs: {e}")
         return []
 
-def format_trading_pairs_message(trading_pairs):
+def filter_trading_pairs(trading_pairs):
     """
-    Format the trading pairs into a message for Discord.
+    Filter trading pairs to include only those with 'SOL' and 24hr Fee/TVL > 50%.
     """
-    if not trading_pairs:
-        return "No active trading pairs found."
-
-    message = "**Active Trading Pairs:**\n\n"
+    filtered_pairs = []
     for pair in trading_pairs:
-        # Extract relevant fields
+        name = pair.get("name", "")
+        fee_tvl = pair.get("24hr_fee_tvl", 0)  # Adjust key based on actual API response
+        if "SOL" in name and fee_tvl > 50:
+            filtered_pairs.append(pair)
+    return filtered_pairs
+
+def format_trading_pairs_message(filtered_pairs):
+    """
+    Format the filtered trading pairs into a message for Discord.
+    """
+    if not filtered_pairs:
+        return "No trading pairs meet the criteria (SOL pair and 24hr Fee/TVL > 50%)."
+
+    message = "**Filtered Trading Pairs (SOL pairs with 24hr Fee/TVL > 50%):**\n\n"
+    for pair in filtered_pairs:
         name = pair.get("name", "Unknown")
         address = pair.get("address", "N/A")
-        message += f"- **Name**: {name}\n  **Address**: {address}\n\n"
-    
-    # Ensure the message does not exceed Discord's 2000-character limit
+        fee_tvl = pair.get("24hr_fee_tvl", "N/A")  # Adjust key based on actual API response
+        message += f"- **Name**: {name}\n  **Address**: {address}\n  **24hr Fee/TVL**: {fee_tvl}%\n\n"
+
+    # Truncate the message if it exceeds 2000 characters
     if len(message) > 2000:
         message = message[:1997] + "..."
     return message
@@ -55,8 +67,8 @@ def send_discord_notification(message):
 
 def main():
     trading_pairs = fetch_trading_pairs()
-    unique_trading_pairs = {pair['address']: pair for pair in trading_pairs}.values()  # Remove duplicates by address
-    message = format_trading_pairs_message(unique_trading_pairs)
+    filtered_pairs = filter_trading_pairs(trading_pairs)
+    message = format_trading_pairs_message(filtered_pairs)
     send_discord_notification(message)
 
 if __name__ == "__main__":
