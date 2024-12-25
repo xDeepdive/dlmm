@@ -1,17 +1,20 @@
 # Use a Python base image
 FROM python:3.11-slim
 
-# Install system dependencies required for Chromium and Selenium
+# Install system dependencies required for Selenium and Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     libnss3 \
     libgconf-2-4 \
-    chromium-browser \
+    libxss1 \
+    libappindicator3-1 \
+    fonts-liberation \
+    chromium \
     chromium-driver
 
-# Set environment variables for Chromium
-ENV CHROME_BIN=/usr/bin/chromium-browser
+# Set environment variables for Chrome and ChromeDriver
+ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_BIN=/usr/bin/chromedriver
 
 # Install Python dependencies
@@ -22,5 +25,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy your Python script into the container
 COPY . /app
 
-# Command to run your Python script
+# Run the Python script
 CMD ["python", "dlmmbot.py"]
