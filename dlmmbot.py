@@ -13,7 +13,7 @@ def fetch_trading_pairs():
     try:
         response = requests.get(f"{BASE_URL}/pair/all")
         response.raise_for_status()
-        return response.json()  # Assuming the API returns a JSON response
+        return response.json()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching trading pairs: {e}")
         return []
@@ -27,12 +27,12 @@ def format_trading_pairs_message(trading_pairs):
 
     message = "**Active Trading Pairs:**\n\n"
     for pair in trading_pairs:
-        # Customize this based on the structure of the trading pair data
+        # Extract relevant fields
         name = pair.get("name", "Unknown")
         address = pair.get("address", "N/A")
         message += f"- **Name**: {name}\n  **Address**: {address}\n\n"
     
-    # Truncate the message if it exceeds 2000 characters
+    # Ensure the message does not exceed Discord's 2000-character limit
     if len(message) > 2000:
         message = message[:1997] + "..."
     return message
@@ -52,11 +52,11 @@ def send_discord_notification(message):
         print("Notification sent to Discord successfully.")
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification to Discord: {e}")
-        print(f"Payload: {payload}")
 
 def main():
     trading_pairs = fetch_trading_pairs()
-    message = format_trading_pairs_message(trading_pairs)
+    unique_trading_pairs = {pair['address']: pair for pair in trading_pairs}.values()  # Remove duplicates by address
+    message = format_trading_pairs_message(unique_trading_pairs)
     send_discord_notification(message)
 
 if __name__ == "__main__":
