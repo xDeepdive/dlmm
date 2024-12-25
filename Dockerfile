@@ -1,7 +1,7 @@
 # Use a Python base image
 FROM python:3.11-slim
 
-# Install system dependencies for Selenium
+# Install system dependencies for Selenium and Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
