@@ -1,7 +1,7 @@
 # Use a Python base image
 FROM python:3.11-slim
 
-# Install system dependencies required for Selenium and Chrome
+# Install system dependencies for Selenium
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     chromium \
     chromium-driver
 
-# Set environment variables for Chrome and ChromeDriver
+# Set environment variables for Chromium and ChromeDriver
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_BIN=/usr/bin/chromedriver
 
@@ -22,7 +22,7 @@ COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy your Python script into the container
+# Copy application files
 COPY . /app
 
 # Run the Python script
