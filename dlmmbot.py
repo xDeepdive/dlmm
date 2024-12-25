@@ -13,62 +13,60 @@ def fetch_trading_pairs():
     try:
         response = requests.get(f"{BASE_URL}/pair/all")
         response.raise_for_status()
-        return response.json()
+        return response.json()  # Assuming the API returns JSON data
     except requests.exceptions.RequestException as e:
         print(f"Error fetching trading pairs: {e}")
         return []
 
-def filter_trading_pairs(trading_pairs):
+def filter_sol_pairs(trading_pairs):
     """
     Filter trading pairs to include only those with 'SOL' and 24hr Fee/TVL > 50%.
     """
     filtered_pairs = []
     for pair in trading_pairs:
         name = pair.get("name", "")
-        fee_tvl = pair.get("24hr_fee_tvl", 0)  # Adjust key based on actual API response
+        fee_tvl = pair.get("24hr_fee_tvl", 0)  # Replace with actual field from the API response
         if "SOL" in name and fee_tvl > 50:
-            filtered_pairs.append(pair)
+            filtered_pairs.append({
+                "name": name,
+                "address": pair.get("address", "N/A"),
+                "fee_tvl": fee_tvl
+            })
     return filtered_pairs
 
-def format_trading_pairs_message(filtered_pairs):
+def format_discord_message(filtered_pairs):
     """
     Format the filtered trading pairs into a message for Discord.
     """
     if not filtered_pairs:
         return "No trading pairs meet the criteria (SOL pair and 24hr Fee/TVL > 50%)."
 
-    message = "**Filtered Trading Pairs (SOL pairs with 24hr Fee/TVL > 50%):**\n\n"
+    message = "**Filtered SOL Pools with 24hr Fee/TVL > 50%:**\n\n"
     for pair in filtered_pairs:
-        name = pair.get("name", "Unknown")
-        address = pair.get("address", "N/A")
-        fee_tvl = pair.get("24hr_fee_tvl", "N/A")  # Adjust key based on actual API response
-        message += f"- **Name**: {name}\n  **Address**: {address}\n  **24hr Fee/TVL**: {fee_tvl}%\n\n"
+        message += f"- **Name**: {pair['name']}\n  **Address**: {pair['address']}\n  **24hr Fee/TVL**: {pair['fee_tvl']}%\n\n"
 
-    # Truncate the message if it exceeds 2000 characters
-    if len(message) > 2000:
-        message = message[:1997] + "..."
     return message
 
 def send_discord_notification(message):
     """
-    Send a notification to the Discord webhook.
+    Send the formatted message to the Discord webhook.
     """
-    if not message.strip():
-        print("No content to send to Discord.")
-        return
-
     payload = {"content": message}
     try:
         response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
         response.raise_for_status()
-        print("Notification sent to Discord successfully.")
+        print("Notification sent successfully!")
     except requests.exceptions.RequestException as e:
-        print(f"Error sending notification to Discord: {e}")
+        print(f"Error sending notification: {e}")
 
 def main():
     trading_pairs = fetch_trading_pairs()
-    filtered_pairs = filter_trading_pairs(trading_pairs)
-    message = format_trading_pairs_message(filtered_pairs)
+    if not trading_pairs:
+        print("No trading pairs data fetched.")
+        return
+
+    filtered_pairs = filter_sol_pairs(trading_pairs)
+    message = format_discord_message(filtered_pairs)
     send_discord_notification(message)
 
 if __name__ == "__main__":
