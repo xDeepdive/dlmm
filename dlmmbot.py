@@ -31,12 +31,20 @@ def format_trading_pairs_message(trading_pairs):
         name = pair.get("name", "Unknown")
         address = pair.get("address", "N/A")
         message += f"- **Name**: {name}\n  **Address**: {address}\n\n"
+    
+    # Truncate the message if it exceeds 2000 characters
+    if len(message) > 2000:
+        message = message[:1997] + "..."
     return message
 
 def send_discord_notification(message):
     """
     Send a notification to the Discord webhook.
     """
+    if not message.strip():
+        print("No content to send to Discord.")
+        return
+
     payload = {"content": message}
     try:
         response = requests.post(DISCORD_WEBHOOK_URL, json=payload)
@@ -44,6 +52,7 @@ def send_discord_notification(message):
         print("Notification sent to Discord successfully.")
     except requests.exceptions.RequestException as e:
         print(f"Error sending notification to Discord: {e}")
+        print(f"Payload: {payload}")
 
 def main():
     trading_pairs = fetch_trading_pairs()
