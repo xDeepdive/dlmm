@@ -1,3 +1,4 @@
+import shutil
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -15,6 +16,11 @@ def fetch_pool_data():
     """
     Fetch pool data dynamically using Selenium.
     """
+    # Detect ChromeDriver binary dynamically
+    chromedriver_path = shutil.which("chromedriver")
+    if not chromedriver_path:
+        raise FileNotFoundError("ChromeDriver binary not found in PATH")
+
     # Set up Selenium WebDriver with headless Chrome
     options = Options()
     options.add_argument("--headless")  # Run Chrome in headless mode
@@ -22,8 +28,7 @@ def fetch_pool_data():
     options.add_argument("--disable-dev-shm-usage")
     options.binary_location = "/usr/bin/chromium"  # Specify the location of Chromium binary
 
-    # Use Service to specify the ChromeDriver path
-    service = Service("/usr/bin/chromedriver")
+    service = Service(chromedriver_path)
     driver = webdriver.Chrome(service=service, options=options)
 
     driver.get(WEBSITE_URL)
